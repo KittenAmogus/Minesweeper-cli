@@ -251,7 +251,17 @@ class Game:
 		return True
 
 	def play(self, mode):
+		from os import get_terminal_size
+		size = get_terminal_size()
+		del get_terminal_size
+
 		self.ROW, self.COL, self.MINES = mode
+		if self.ROW * 2 + 3 > size[1]:
+			print("Terminal is too small(Y)")
+			exit(1)
+		if self.COL * 4 + 14 > size[0]:
+			print("Terminal is too small(X)")
+			exit(1)
 
 		while True:
 			self._genWorld()
@@ -295,7 +305,13 @@ def main():
 		print(f"{i + 1}. {k}")
 	print("\n0. Quit")
 	try:
-		inp = int(input())
+		inp = int(input("\n\x1b[95mMode (0-3) > \x1b[0m"))
+
+		if 0 <inp <= 3:
+			print(f"Mode: {list(modes.keys())[inp - 1]}")
+		elif inp == 0:
+			print("Quit")
+			return
 	
 	except ValueError:
 		inp = 1
@@ -305,6 +321,18 @@ def main():
 
 	if not (0 <= inp < 4):
 		inp = 1
+	
+	print("""
+WASD / ARROWS - MOVE
+SPACE - REVEAL
+TAB / ENTER - FLAG
+CTRL+C - EXIT
+	   """)
+	print("Press any key to continue...", end="", flush=True)
+	char = game.getch()
+	if char == '\x03':
+		print("\x1b[91mInterrupted\x1b[0m")
+		return
 
 	game.play(modes[list(modes.keys())[inp - 1]])
 
