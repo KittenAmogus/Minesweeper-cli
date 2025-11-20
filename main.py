@@ -99,7 +99,15 @@ class Game:
 	def _flagCell(self, pos):
 		cell = self.world[pos[1]][pos[0]]
 		if cell.isOpen:
+			if len(tuple(i for i in self._neighbors(cell) if not i.isOpen)) == cell.near:
+				for nb in self._neighbors(cell):
+					if nb.isOpen:
+						continue
+					if not nb.isFlag:
+						self.flags_remain -= 1
+					nb.isFlag = True
 			return
+
 		cell.isFlag = not cell.isFlag
 		if cell.isFlag:
 			self.flags_remain -= 1
@@ -150,6 +158,20 @@ class Game:
 			return False
 
 		if cell.isOpen:
+			flags = 0
+			for nb in self._neighbors(cell):
+				if nb.isFlag:
+					flags += 1
+			if flags >= cell.near:
+				for nb in self._neighbors(cell):
+					if nb.isFlag:
+						continue
+					if nb.open():
+						self.cursor = list(nb.pos)
+						self._gameOver(False)
+					elif nb.near == 0:
+						self._revealNearCells(nb.pos)
+
 			return False
 
 		cell.open()

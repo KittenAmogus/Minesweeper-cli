@@ -30,9 +30,10 @@ class Cell:
 		self.near = 0
 	
 	def open(self):
-		if not self.isOpen:
+		if not (self.isOpen or self.isFlag):
 			self.isOpen = True
 			self.game.openRemain -= 1
+			return self.isMine
 
 	@property
 	def pos(self):
