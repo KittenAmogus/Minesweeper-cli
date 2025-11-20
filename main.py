@@ -2,7 +2,7 @@ import random
 import time
 
 from cell import Cell
-from draw import drawFull, drawGrid, draw
+from draw import drawFull, drawGrid, drawInfo, draw
 from setting import *
 from term_acts import GetchUnix
 
@@ -21,6 +21,10 @@ class Game:
 		self.world = None
 		self.lworld = None
 		self.flags_remain = 0
+		self.openRemain = 0
+		self.turn = 0
+		self.time = 0
+		self.ltime = time.perf_counter()
 
 		self.ROW, self.COL = ROW, COL
 		self.MINES = MINES
@@ -28,7 +32,7 @@ class Game:
 		self.first_click = False
 
 		self.cursor = [0, 0]
-	
+
 	def _genWorld(self):
 		self.world = []
 		self.lworld = []
@@ -62,9 +66,11 @@ class Game:
 	
 	def _start(self):
 		self.flags_remain = self.MINES
+		self.openRemain = self.ROW * self.COL - self.MINES
 		self.first_click = True
 		self.game = True
 		self.cursor = [0, 0]
+		self.turn = 0
 	
 	# MULTI TIME METHODS
 
@@ -72,6 +78,13 @@ class Game:
 	def _gameOver(self, win):
 		self.game = False
 		if win:
+			print("You won!")
+			print("""
+\x1b[93m┌──┐
+│  │
+╰┐┌╯
+ ╯╰\x1b[0m
+			""".strip())
 			return
 
 		for row in self.world:
@@ -79,13 +92,22 @@ class Game:
 				if not cell.isMine or cell.isFlag:
 					continue
 
-				cell.isOpen = True
-		draw(self.world, self.lworld)
+				cell.open()
+		draw(self, self.world, self.lworld)
 		
 
 	def _flagCell(self, pos):
 		cell = self.world[pos[1]][pos[0]]
+		if cell.isOpen:
+			return
 		cell.isFlag = not cell.isFlag
+		if cell.isFlag:
+			self.flags_remain -= 1
+			if self.flags_remain < 0:
+				cell.isFlag = False
+				self.flags_remain = 0
+		else:
+			self.flags_remain += 1
 
 	def _neighbors(self, cell):
 		nbs = []
@@ -113,7 +135,7 @@ class Game:
 			if cur.isOpen or cur.isFlag:
 				continue
 
-			cur.isOpen = True
+			cur.open()
 			if cur.near > 0:
 				continue
 			
@@ -130,7 +152,7 @@ class Game:
 		if cell.isOpen:
 			return False
 
-		cell.isOpen = True
+		cell.open()
 
 		if cell.isMine:
 			return True
@@ -141,24 +163,29 @@ class Game:
 		return False
 
 	def _moveCursor(self, *moveTo):
-	
-		if not ((0 <= self.cursor[0] + moveTo[0] < self.COL) and (
-				0 <= self.cursor[1] + moveTo[1] < self.ROW
-				)):
-			return
-
 		self.cursor[0] += moveTo[0]
 		self.cursor[1] += moveTo[1]
 
 		self.cursor[0] %= self.COL
 		self.cursor[1] %= self.ROW
 
+	
+
 	def _processChar(self, char):
 
 		if not self.game:
 			return False
-
+		
 		match char:
+			case 'A':
+				self._moveCursor(0, -1)
+			case 'B':
+				self._moveCursor(0, 1)
+			case 'C':
+				self._moveCursor(1, 0)
+			case 'D':
+				self._moveCursor(-1, 0)
+
 			case 'w':
 				self._moveCursor(0, -1)
 			case 's':
@@ -167,48 +194,57 @@ class Game:
 				self._moveCursor(1, 0)
 			case 'a':
 				self._moveCursor(-1, 0)
-			
-			case 'r':
-				try:
-					inp = input("You sure want to restart (y/N)? ") == 'y'
-
-					if inp:
-						self.game = False
-
-				except KeyboardInterrupt:
-					pass
 
 			case ' ':
+				self.turn += 1
 				if self.first_click:
 					self._genMines(self.cursor)
 					self.first_click = False
+					self.ltime = time.perf_counter()
 
 				if self._revealCell(self.cursor):
 					self._gameOver(False)
 					return True
+				if self.openRemain <= 0:
+					self._gameOver(True)
 				# self.turn ++
 			case '\r':
+				self.turn += 1
 				self._flagCell(self.cursor)
 
+			case '\t':
+				self.turn += 1
+				self._flagCell(self.cursor)
+			
+			case '\x1b':
+				pass
+
+			case '[':
+				pass
+
 			case _:
-				print(f"Unknow command!", end="\r")
+				print(f"Unknow command", end="\r")
 				return False
 		
 		return True
 
-	def play(self):
+	def play(self, mode):
+		self.ROW, self.COL, self.MINES = mode
+
 		while True:
 			self._genWorld()
 			self._start()
-			drawFull(self.world)
+			drawFull(self, self.world)
 
 			while self.game:
+				if not self.first_click:
+					self.time = int(time.perf_counter() - self.ltime)
 				char = self.getch()
 				if char == '\x03':
 					break
 	
 				if self._processChar(char):
-					draw(self.world, self.lworld)
+					draw(self, self.world, self.lworld)
 					self.lworld = [i.copy() for i in self.world]
 
 			else:
@@ -224,7 +260,32 @@ class Game:
 
 def main():
 	game = Game()
-	game.play()
+
+	modes = {
+			"Easy": (9, 9, 10),
+			"Normal": (16, 16, 30),
+			"Expert": (16, 30, 99)
+			}
+	
+	print("\x1b[H\x1b[2J", end="")
+	print("Choose mode(default Easy)")
+	for i, k in enumerate(modes.keys()):
+		print(f"{i + 1}. {k}")
+	print("\n0. Quit")
+	try:
+		inp = int(input())
+	
+	except ValueError:
+		inp = 1
+
+	except KeyboardInterrupt:
+		return
+
+	if not (0 <= inp < 4):
+		inp = 1
+
+	game.play(modes[list(modes.keys())[inp - 1]])
+
 
 if __name__ == "__main__":
 	main()

@@ -28,6 +28,11 @@ class Cell:
 		self.isMine = False
 		self.isFlag = False
 		self.near = 0
+	
+	def open(self):
+		if not self.isOpen:
+			self.isOpen = True
+			self.game.openRemain -= 1
 
 	@property
 	def pos(self):
