@@ -1,3 +1,6 @@
+import random
+import time
+
 from cell import Cell
 from draw import drawFull, drawGrid, draw
 from setting import *
@@ -38,12 +41,47 @@ class Game:
 			self.world.append(_line)
 			self.lworld.append(_line.copy())
 	
+	def _genMines(self, start):
+		start = tuple(start)
+		positions = [(x, y) for x in range(self.COL) for y in range(self.ROW)]
+		positions.remove(start)
+
+		for _ in range(self.MINES):
+			pos = random.choice(positions)
+			positions.remove(pos)
+			self.world[pos[1]][pos[0]].isMine = True
+
+		for y, row in enumerate(self.world):
+			for x, cell in enumerate(row):
+				if cell.isMine:
+					continue
+
+				for nb in self._neighbors(cell):
+					if nb.isMine:
+						cell.near += 1
+	
 	def _start(self):
 		self.flags_remain = self.MINES
 		self.first_click = True
 		self.game = True
+		self.cursor = [0, 0]
 	
 	# MULTI TIME METHODS
+
+
+	def _gameOver(self, win):
+		self.game = False
+		if win:
+			return
+
+		for row in self.world:
+			for cell in row:
+				if not cell.isMine or cell.isFlag:
+					continue
+
+				cell.isOpen = True
+		draw(self.world, self.lworld)
+		
 
 	def _flagCell(self, pos):
 		cell = self.world[pos[1]][pos[0]]
@@ -96,12 +134,19 @@ class Game:
 
 		if cell.isMine:
 			return True
-
-		self._revealNearCells(pos)
+		
+		if cell.near == 0:
+			self._revealNearCells(pos)
 
 		return False
 
 	def _moveCursor(self, *moveTo):
+	
+		if not ((0 <= self.cursor[0] + moveTo[0] < self.COL) and (
+				0 <= self.cursor[1] + moveTo[1] < self.ROW
+				)):
+			return
+
 		self.cursor[0] += moveTo[0]
 		self.cursor[1] += moveTo[1]
 
@@ -109,6 +154,10 @@ class Game:
 		self.cursor[1] %= self.ROW
 
 	def _processChar(self, char):
+
+		if not self.game:
+			return False
+
 		match char:
 			case 'w':
 				self._moveCursor(0, -1)
@@ -118,39 +167,64 @@ class Game:
 				self._moveCursor(1, 0)
 			case 'a':
 				self._moveCursor(-1, 0)
+			
+			case 'r':
+				try:
+					inp = input("You sure want to restart (y/N)? ") == 'y'
+
+					if inp:
+						self.game = False
+
+				except KeyboardInterrupt:
+					pass
 
 			case ' ':
-				self._revealCell(self.cursor)
+				if self.first_click:
+					self._genMines(self.cursor)
+					self.first_click = False
+
+				if self._revealCell(self.cursor):
+					self._gameOver(False)
+					return True
 				# self.turn ++
 			case '\r':
 				self._flagCell(self.cursor)
 
 			case _:
-				print(repr(char))
+				print(f"Unknow command!", end="\r")
 				return False
 		
 		return True
 
 	def play(self):
-		self._genWorld()
-		self._start()
-		
-		drawFull(self.world)
+		while True:
+			self._genWorld()
+			self._start()
+			drawFull(self.world)
 
-		while self.game:
-			char = self.getch()
-			if char == '\x03':
-				break
+			while self.game:
+				char = self.getch()
+				if char == '\x03':
+					break
+	
+				if self._processChar(char):
+					draw(self.world, self.lworld)
+					self.lworld = [i.copy() for i in self.world]
 
-			if self._processChar(char):
-				draw(self.world, self.lworld)
-				self.lworld = [i.copy() for i in self.world]
+			else:
+				
+				char = self.getch()
+				
+				while char not in ('\x03', ' '):
+					char = self.getch()
+				if char != '\x03':
+					continue
+			break
 
 
 def main():
 	game = Game()
 	game.play()
-
 
 if __name__ == "__main__":
 	main()

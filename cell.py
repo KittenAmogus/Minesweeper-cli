@@ -2,7 +2,7 @@ class _Style:
 	EMPTY = " "
 	MINE = "@"
 	FLAG = "F"
-	CLOSED = "#"
+	CLOSED = " "
 
 
 class _Color:
@@ -10,6 +10,8 @@ class _Color:
 	MINE = "\x1b[91m"
 	FLAG = "\x1b[103;30m"
 	CLOSED = ""
+
+	CURSOR = "\x1b[95m"
 
 	NUMBERS = tuple([EMPTY] + [
 		f"\x1b[{i}m" for i in (104, 102, 101, 44, 41, 106, 105, 90)
@@ -63,6 +65,6 @@ class Cell:
 	
 	def __str__(self):
 		if self.game.cursor[0] == self.x and self.game.cursor[1] == self.y:
-			return f"\x1b[93m[{self._getString()}]"
+			return f"{_Color.CURSOR}[{self._getString()}]"
 		return f"{self._getColor()} {self._getString()} "
 
