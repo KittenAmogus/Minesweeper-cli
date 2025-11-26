@@ -4,18 +4,18 @@ import time
 from cell import Cell
 from draw import drawFull, drawGrid, drawInfo, draw
 from setting import *
-from term_acts import GetchUnix
+from term_acts import Getch
 
 
 class Game:
 	def __init__(self):
-		import os
-		if os.name == "nt":
-			print("\x1b[91mThis version is only for Unix!\x1b[0m")
-			exit(1)
-		del os
+		# import os
+		# if os.name == "nt":
+		# 	print("\x1b[91mThis version is only for Unix!\x1b[0m")
+		# 	exit(1)
+		# del os
 
-		self.getch = GetchUnix()
+		self.getch = Getch()
 		self.game = False
 		
 		self.world = None
@@ -245,7 +245,7 @@ class Game:
 				pass
 
 			case _:
-				print(f"Unknow command", end="\r")
+				print(f"Unknow command [{repr(char)}] ", end="\r")
 				return False
 		
 		return True
