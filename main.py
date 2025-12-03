@@ -1,7 +1,7 @@
 import random
 import time
 
-from cell import Cell
+from cell import Cell, copyCells
 from draw import drawFull, drawGrid, drawInfo, draw
 from setting import *
 from term_acts import Getch
@@ -31,6 +31,7 @@ class Game:
 
 		self.first_click = False
 
+		self.lcursor = [0, 0]
 		self.cursor = [0, 0]
 
 	def _genWorld(self):
@@ -43,7 +44,7 @@ class Game:
 				cell = Cell(self, x, y)
 				_line.append(cell)
 			self.world.append(_line)
-			self.lworld.append(_line.copy())
+			self.lworld.append(copyCells(_line))
 	
 	def _genMines(self, start):
 		start = tuple(start)
@@ -77,6 +78,7 @@ class Game:
 
 	def _gameOver(self, win):
 		self.game = False
+		self.lcursor = self.cursor.copy()
 		if win:
 			print("You won!")
 			print("""
@@ -185,13 +187,12 @@ class Game:
 		return False
 
 	def _moveCursor(self, *moveTo):
+		self.lcursor = self.cursor.copy()
 		self.cursor[0] += moveTo[0]
 		self.cursor[1] += moveTo[1]
 
 		self.cursor[0] %= self.COL
 		self.cursor[1] %= self.ROW
-
-	
 
 	def _processChar(self, char):
 
@@ -277,7 +278,7 @@ class Game:
 	
 				if self._processChar(char):
 					draw(self, self.world, self.lworld)
-					self.lworld = [i.copy() for i in self.world]
+					self.lworld = [copyCells(i) for i in self.world]
 
 			else:
 				

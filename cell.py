@@ -40,9 +40,7 @@ class Cell:
 		return self.x, self.y
 
 	def __eq__(self, other):
-		return all((
-			self.isOpen != other.isOpen, self.isFlag != other.isFlag
-			))
+		return self.isOpen == other.isOpen and self.isFlag == other.isFlag
 
 	def _getString(self):
 		if not self.isOpen:
@@ -73,4 +71,15 @@ class Cell:
 		if self.game.cursor[0] == self.x and self.game.cursor[1] == self.y:
 			return f"{_Color.CURSOR}[{self._getString()}]"
 		return f"{self._getColor()} {self._getString()} "
+
+
+def copyCells(row):
+	newRow = row.copy()
+	for i, v in enumerate(newRow):
+		newRow[i] = Cell(v.game, v.x, v.y)
+		newRow[i].isOpen = v.isOpen
+		newRow[i].isMine = v.isMine
+		newRow[i].isFlag = v.isFlag
+		newRow[i].near = v.near
+	return newRow
 

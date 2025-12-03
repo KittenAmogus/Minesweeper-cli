@@ -75,8 +75,11 @@ def draw(game, world, lworld):
 	ROW, COL = game.ROW, game.COL
 	for y, row in enumerate(world):
 		for x, cell in enumerate(row):
-			if cell != lworld[y][x]:
+			if not cell == lworld[y][x] or\
+			tuple(game.cursor) == (x, y) or\
+			tuple(game.lcursor) == (x, y):
 				printf(f"\x1b[{2 + 2 * y};{2 + 4 * x}H")
 				printf(str(cell) + "\x1b[0m")
-	printf(f"\x1b[{2 + 2 * ROW};1H\n\r")
+	printf(f"\x1b[{2 + 2 * ROW};1H")
+	print(flush=True)
 
