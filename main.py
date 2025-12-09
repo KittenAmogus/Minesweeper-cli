@@ -294,34 +294,53 @@ class Game:
 def main():
 	game = Game()
 
-	modes = {
-			"Easy": (9, 9, 10),
-			"Normal": (16, 16, 30),
-			"Expert": (16, 30, 99)
-			}
-	
-	print("\x1b[H\x1b[2J", end="")
-	print("Choose mode(default Easy)")
-	for i, k in enumerate(modes.keys()):
-		print(f"{i + 1}. {k}")
-	print("\n0. Quit")
-	try:
-		inp = int(input("\n\x1b[95mMode (0-3) > \x1b[0m"))
+	import sys
+	argv = sys.argv
 
-		if 0 <inp <= 3:
-			print(f"Mode: {list(modes.keys())[inp - 1]}")
-		elif inp == 0:
-			print("Quit")
+	md = None
+	if len( argv ) > 1:
+		md = argv[ 1 ].lower()
+		if md.isdigit():
+			md = int( md )
+			if ( md <= 0 | md >= 4):
+				md = 1
+		elif md in ( "easy", "normal", "hard"):
+			md = ( "easy", "normal", "hard").index( md ) + 1
+		else:
+			print("Difficulty must be 1/2/3 or easy/normal/hard")
+			md = None
+	modes = {
+		"Easy": (9, 9, 10),
+		"Normal": (16, 16, 30),
+		"Hard": (16, 30, 99)
+	}
+
+	if md is None:
+			
+		print("\x1b[H\x1b[2J", end="")
+		print("Choose mode(default Easy)")
+		for i, k in enumerate(modes.keys()):
+			print(f"{i + 1}. {k}")
+		print("\n0. Quit")
+		try:
+			inp = int(input("\n\x1b[95mMode (0-3) > \x1b[0m"))
+	
+			if 0 <inp <= 3:
+				print(f"Mode: {list(modes.keys())[inp - 1]}")
+			elif inp == 0:
+				print("Quit")
+				return
+		
+		except ValueError:
+			inp = 1
+	
+		except KeyboardInterrupt:
 			return
 	
-	except ValueError:
-		inp = 1
-
-	except KeyboardInterrupt:
-		return
-
-	if not (0 <= inp < 4):
-		inp = 1
+		if not (0 <= inp < 4):
+			inp = 1
+		
+		md = inp
 	
 	print("""
 WASD / ARROWS - MOVE
@@ -335,7 +354,7 @@ CTRL+C - EXIT
 		print("\x1b[91mInterrupted\x1b[0m")
 		return
 
-	game.play(modes[list(modes.keys())[inp - 1]])
+	game.play(modes[list(modes.keys())[md - 1]])
 
 
 if __name__ == "__main__":
