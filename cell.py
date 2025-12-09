@@ -1,5 +1,5 @@
 class _Style:
-	EMPTY = " "
+	EMPTY = "."
 	MINE = "@"
 	FLAG = "F"
 	CLOSED = " "
